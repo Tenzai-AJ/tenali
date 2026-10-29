@@ -27,7 +27,7 @@ Tenali is built as a decoupled web application with a single-page React frontend
 3. **Submitting an Answer:** The student enters their answer and clicks **Submit**. The frontend sends the response to the validation route (`POST /<topic>-api/check`).
 4. **Grading & Feedback:** The server evaluates whether the answer is mathematically correct (`correct: true/false`). The frontend displays immediate feedback, and the adaptive score adjusts (moving difficulty up on success, down on mistakes).
 5. **Step-by-Step Explanations:** If the learner gets stuck or clicks **Solve**, the server's explanation middleware (`server/explanations.js`) generates a step-by-step walkthrough of the solution.
-6. **Progress Tracking:** The server asynchronously logs attempt data to MongoDB (via `server/lil/`), updating the student's earned coins, XP, and streak progress.
+6. **Progress Tracking:** The server asynchronously logs attempt data to MongoDB (via `server/lil/`), updating the student's earned coins and XP via the attempt-processing and student-state flow (`server/lil/processAttempt.js` and `studentState.js`), while streak handling is managed in `server/index.js`.
 
 ---
 
@@ -54,7 +54,7 @@ Tenali already includes a solid foundation of learning modules and server utilit
 ### 🚨 Gap: Lack of Qualitative Misconception Detection in Wrong-Answer Feedback
 
 - **Where:** `server/routes/misc.js` (which handles topics like fraction arithmetic), the attempt-tracking modules under `server/lil/` (`models.js`, `attemptLogger.js`, `processAttempt.js`), and the explanation generator in `server/explanations.js`.
-- **What:** Tenali accurately checks whether an answer is right or wrong, and it already logs student attempts in the database. However, when an answer is incorrect, the system only returns a binary verdict (`correct: false`). It does not inspect the student's response to identify the specific mathematical reasoning mistake behind it.
+- **What:** Tenali accurately checks whether an answer is right or wrong, and it already logs student attempts in the database. In the existing fraction answer checker (`server/routes/misc.js`), the response returns structured fields: `correct`, `correctNum`, `correctDen`, `display`, and `message`. However, it does not inspect the student's submitted numerator and denominator to identify the specific mathematical reasoning mistake behind an incorrect answer. The proposed misconception detector can compare a student's submitted numerator and denominator against known error patterns using the existing request/response flow to detect likely fraction-addition misconceptions and provide targeted feedback.
 - **Why It Matters:** Telling a student that their answer is wrong does not explain *why* their thinking was flawed. For example, if a child solving a fraction addition problem repeatedly adds the numerators and denominators straight across, standard feedback simply tells them to try again or shows the correct final answer. Without targeted feedback that addresses their specific mistake, learners frequently repeat the same error.
 
 ---
@@ -110,12 +110,11 @@ The Language Puzzles activity could not be launched properly from the navigation
 2. In `client/src/features/tiles.js`, registered the `language` entry in the `TILES` array with appropriate metadata:
    ```javascript
    {
-     id: 'language',
+     key: 'language',
      name: 'Language Puzzles',
-     desc: 'Word ladders, anagrams, cryptarithms and linguistic logic',
-     category: 'puzzles',
-     icon: 'BookOpen',
-     accent: '#3B82F6'
+     subtitle: 'Fill in the blanks to create new words',
+     color: 'orange',
+     category: 'shelf'
    }
    ```
 
@@ -138,12 +137,11 @@ The Geocraft 3D/geometry module had an inconsistent entry definition in `GEOCRAF
 2. Formally added `geocraft` into the `TILES` catalog array so it renders identically to all native interactive sandboxes:
    ```javascript
    {
-     id: 'geocraft',
-     name: 'Geocraft',
-     desc: 'Interactive 3D geometry and coordinate exploration sandbox',
-     category: 'geometry',
-     icon: 'Box',
-     accent: '#10B981'
+     key: 'geocraft',
+     name: '📐 GeoCraft',
+     subtitle: 'Interactive Geometry Lab',
+     color: 'featured',
+     category: 'shape-space'
    }
    ```
 
